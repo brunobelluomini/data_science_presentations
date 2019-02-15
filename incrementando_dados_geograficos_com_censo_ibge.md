@@ -29,6 +29,8 @@ SSSS – Setor
 ```
 
 ![](/images/setores_censitarios_vila_olimpia.png)
+Exemplo de organização de setores censitários na cidade de São Paulo. Cada setor é limitado pelas linhas azuis mais escuras.
+
 
 A base de dados coletados do Censo IBGE 2010 pode ser encontrada [aqui](https://www.ibge.gov.br/estatisticas-novoportal/downloads-estatisticas.html) seguindo o caminho:
 
@@ -38,8 +40,8 @@ Censos -> Censo_Demografico_2010 -> Resultados_do_Universo -> Agregados_por_Seto
 
 Os arquivos de dados possuem encoding `iso8859_15` e `;` como separador.
 
+## Chega de papinho, hora da prática
 Sem mais delongas, vamos a um exemplo prático considerando o endereço da Creditas:
-
 
 ```Python
 import pandas as pd
@@ -48,13 +50,12 @@ geolocation_info_df = pd.DataFrame({
     ‘address’: ['Avenida Engenheiro Luis Carlos Berrini'],
     ‘address_number’: ['105'],
     ‘address_city’: ['São Paulo'],
-    ‘address_state’: ['SP'],
-    ‘address_zipcode’: ['04571-010']
+    ‘address_state’: ['SP']
 })
 ```
-| address | address_number | address_city | address_state | address_zipcode |
-|----------------------------------------|-----|-----------|----|-----------|
-| Avenida Engenheiro Luis Carlos Berrini | 105 | São Paulo | SP | 04571-010 |
+| address | address_number | address_city | address_state |
+|----------------------------------------|-----|-----------|----|
+| Avenida Engenheiro Luis Carlos Berrini | 105 | São Paulo | SP |
 
 
 Nosso objetivo é extrair as variáveis do Censo para este endereço. Quando abrir a base de dados do Censo vai se deparar com algo similar à tabela abaixo:
@@ -66,13 +67,13 @@ Nosso objetivo é extrair as variáveis do Censo para este endereço. Quando abr
 
 `Cod_setor` é código do setor censitário e `V001`, `V002` e `V003` são exemplos das variáveis encontradas. As explicações sobre elas podem ser encontradas na documentação do Censo também disponível no link para a base de dados.
 
-O desafio então vai ser transformar a string do endereço no código `355030835000017` para extrair as variáveis. A ligação entre as duas será feita usando um arquivo geoespacial chamado Shapefile (`.shp`), um dataframe que contém características geográficas e sua formatação é parecida com isto:
+O desafio então vai ser transformar a string do endereço no código `355030835000017` para extrair as variáveis. A ligação entre as duas será feita usando um arquivo geoespacial chamado Shapefile (`.shp`), um dataframe que contém características geográficas cujo formato é parecido com isto:
 
 |ID      | CD_GEOCODI    |...| geometry                                     |
 |--------|---------------|---|----------------------------------------------|
 | 115583 |355030835000017|...|POLYGON((-46.69188 -23.602605, -46.691487 -23…|
 
-As duas colunas que importam para nós são a `CD_GEOCODI` que é o código do setor censitário e a `geometry` que contém um objeto `POLYGON` com as coordenadas geográficas (longitude e latitude respectivamente) do desenho daquele setor.
+As duas colunas que importam para nós são a `CD_GEOCODI`, o código do setor censitário, e a `geometry` que contém um objeto `POLYGON` com as coordenadas geográficas (longitude e latitude respectivamente) do desenho daquele setor.
 
 A ideia do processo vai ser de converter o endereço em longitude e latitude para então pegar o código do setor com o Shapefile.
 
@@ -89,13 +90,13 @@ Para utilizar esta API é necessária uma chave de autenticação. Você pode ob
 import googlemaps
 
 gmaps_client = googlemaps.Client(key=gmaps_api_key)
-gmaps_response = gmaps.geocode(address=’Avenida Engenheiro Luis Carlos Berrini, 105, São Paulo, SP’)
+gmaps_response = gmaps.geocode(address='Avenida Engenheiro Luis Carlos Berrini, 105, São Paulo, SP')
 
-gmaps_response_location = gmaps_response[0][‘geometry’][‘location’]
-longitude = gmaps_response_location[‘lng’]
-latitude = gmaps_response_location[‘lat’]
+gmaps_response_location = gmaps_response[0]['geometry']['location']
+longitude = gmaps_response_location['lng']
+latitude = gmaps_response_location['lat']
 
-print(f’{longitude}, {latitude}’)
+print(f'{longitude}, {latitude}')
 # -46.6899982, -23.5984886
 ```
 
@@ -106,7 +107,7 @@ Agora que conseguimos o ponto com as coordenadas nós precisamos encontrar em qu
 ```Python
 from shapely.geometry import Point
 
-geolocation_info_df[‘coordinate_point’] = Point(longitude, latitude)
+geolocation_info_df['coordinate_point'] = Point(longitude, latitude)
 geolocation_info_df
 ```
 
@@ -120,7 +121,7 @@ O próximo passo é carregar o Shapefile dos setores censitários com a bibliote
 import geopandas as gpd
 
 census_sector_gpd = gpd.read_file(
-‘sp_setores_censitarios/35SEE250GC_SIR.shp’
+'sp_setores_censitarios/35SEE250GC_SIR.shp'
 )
 
 geolocation_info_df['census_code'] = geolocation_info_df['coordinate_point'].map(
@@ -142,13 +143,13 @@ ibge_census_features_df = pd.read_csv(
     sep=';'
 )
 
-geolocation_info_df = geolocation_info_df.merge(
+geolocation_info_with_ibge_df = geolocation_info_df.merge(
     ibge_census_features_df,
     left_on='census_code',
     right_on='Cod_setor'
 )
 
-geolocation_info_df
+geolocation_info_with_ibge_df
 ```
 
 O resultado final ficará assim:
