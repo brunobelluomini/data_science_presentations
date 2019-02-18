@@ -1,24 +1,24 @@
 # Incrementando dados geográficos com o Censo Nacional do IBGE
 
-Geolocalização é um ponto importante em diversos domínios. Serviços de entrega, seguradoras ou mesmo pesquisas para saber se uma nova unidade de uma franquia dará resultado estão muito interessados em saber mais características sobre uma determinada região.
+Geolocalização é um ponto importante em diversos domínios. Serviços de entrega, seguradoras ou franquias estão muito interessadas em conhecer a fundo uma região.
 
-Como um dos produtos da Creditas é o empréstimo com garantia de imóvel, a localização é fator importante.
+Como um dos produtos da Creditas é o empréstimo com garantia de imóvel, a localização é fator importante visto que ela influencia diretamente no valor da garantia, o qual está atrelado ao valor empréstimo que o cliente pode fazer.
 
-No contexto de ciência de dados, saber CEP, bairro, cidade e estado podem não ser o suficiente. O correto é encontrarmos outras informações mais genéricas que expliquem características daquela localidade.
+No contexto de ciência de dados, saber CEP, bairro, cidade e estado podem não ser o suficiente. O mais interessante é encontrarmos outras informações mais genéricas que expliquem características daquela localidade.
 
-Digamos que um modelo de machine learning foi treinado com uma feature que recebe o nome do bairro em um dataset contendo apenas exemplos de clientes do estado de São Paulo. Se este modelo receber algum cliente do Rio de Janeiro para fazer uma predição ele não vai saber o que fazer com um bairro de valor “Barra da Tijuca” e ou vai quebrar ou resultar numa predição completamente equivocada.
+Digamos que um modelo de machine learning foi treinado com uma feature que recebe o nome do bairro em um dataset contendo apenas exemplos de clientes do estado de São Paulo. Se este modelo receber como entrada algum cliente do Rio de Janeiro para fazer uma predição ele não vai saber o que fazer com um bairro de valor “Barra da Tijuca” e pode resultar ou num erro ou numa predição completamente equivocada.
 
 Em contrapartida, se o modelo receber a quantidade de habitantes entre 18 e 60 anos daquele mesmo bairro, isso generaliza o fator de localização geográfica para o modelo uma vez que qualquer lugar pode ter o mesmo número contabilizado.
 
-**Portanto, busque sempre usar features como `renda_per_capita_média` ou `índice_de_furtos_a_cada_100_habitantes` em vez do nome do Bairro ou Cidade, por exemplo.**
+**Portanto, busque sempre usar features como `renda_per_capita_media` ou `indice_de_furtos_a_cada_100_habitantes` em vez do nome do Bairro ou Cidade, por exemplo.**
 
 _”Mas onde conseguir estes dados?”_ você se pergunta. Existem algumas fontes de dados abertas como o [Geosampa](http://geosampa.prefeitura.sp.gov.br/PaginasPublicas/_SBC.aspx) para a cidade de São Paulo, mas numa escala nacional uma das melhores para se utilizar é o *censo nacional do IBGE*.
 
 ## Sobre o Censo Nacional do IBGE
 O Censo Nacional do IBGE é o principal estudo estatístico sobre a população brasileira e ocorre a cada 10 anos, sendo a versão mais recente realizada
-em 2010. Nele é possível encontrar informações como número de pessoas alfabetizadas, maiores de idade, infra estrutura urbana, etc.
+em 2010. Nele é possível encontrar informações como número de pessoas alfabetizadas, maiores de idade, infraestrutura urbana, etc.
 
-Os dados coletados são em função de uma unidade territorial chamada **setor censitário**. Existem cerca de 314 mil setores censitários no Censo 2010 mapeados em todo o Brasil. Cada setor censitário possui um id único no formato `<UF><MMMMM><DD><SD><SSSS>`, onde:
+Os dados coletados são em função da menor unidade territorial chamada **setor censitário**. Existem cerca de 314 mil setores censitários no Censo 2010 mapeados em todo o Brasil. Cada setor censitário possui um id único no formato `<UF><MMMMM><DD><SD><SSSS>`, onde:
 
 ```
 UF – Unidade da Federação
@@ -29,7 +29,7 @@ SSSS – Setor
 ```
 
 ![](/images/setores_censitarios_vila_olimpia.png)
-Exemplo de organização de setores censitários na cidade de São Paulo. Cada setor é limitado pelas linhas azuis mais escuras.
+Exemplo de organização de setores censitários do bairro Vila Olímpia (em azul claro) em São Paulo. Cada setor é limitado pelas linhas azuis mais escuras. Extraído de https://censo2010.ibge.gov.br/sinopseporsetores/
 
 
 A base de dados coletados do Censo IBGE 2010 pode ser encontrada [aqui](https://www.ibge.gov.br/estatisticas-novoportal/downloads-estatisticas.html) seguindo o caminho:
@@ -40,17 +40,17 @@ Censos -> Censo_Demografico_2010 -> Resultados_do_Universo -> Agregados_por_Seto
 
 Os arquivos de dados possuem encoding `iso8859_15` e `;` como separador.
 
-## Chega de papinho, hora da prática
+## Chega de papinho: Hora da prática!
 Sem mais delongas, vamos a um exemplo prático considerando o endereço da Creditas:
 
 ```Python
 import pandas as pd
 
 geolocation_info_df = pd.DataFrame({
-    ‘address’: ['Avenida Engenheiro Luis Carlos Berrini'],
-    ‘address_number’: ['105'],
-    ‘address_city’: ['São Paulo'],
-    ‘address_state’: ['SP']
+    'address': ['Avenida Engenheiro Luis Carlos Berrini'],
+    'address_number': ['105'],
+    'address_city': ['São Paulo'],
+    'address_state': ['SP']
 })
 ```
 | address | address_number | address_city | address_state |
@@ -59,6 +59,16 @@ geolocation_info_df = pd.DataFrame({
 
 
 Nosso objetivo é extrair as variáveis do Censo para este endereço. Quando abrir a base de dados do Censo vai se deparar com algo similar à tabela abaixo:
+
+```Python
+ibge_census_features_df = pd.read_csv(
+    'Database/SP1/CSV/Basico_SP1.csv',
+    encoding='iso8859_15',
+    sep=';'
+)
+
+ibge_census_features_df.head(1)
+```
 
 | Cod_setor       |...| V001 | V002 | V003 |...|
 |-----------------|---|------|------|------|---|
@@ -80,7 +90,7 @@ A ideia do processo vai ser de converter o endereço em longitude e latitude par
 Os arquivos Shapefile `.shp` dos setores censitários podem ser acessados [aqui](http://geoftp.ibge.gov.br/organizacao_do_territorio/malhas_territoriais/malhas_de_setores_censitarios__divisoes_intramunicipais/censo_2010/setores_censitarios_shp/).
 
 
-## Convertendo endereço para Lat/Lon
+## Convertendo endereço para longitude e latitude
 
 Existem diversos serviços que permitem fazer a conversão do endereço em longitude e latitude. Neste exemplo vamos utilizar a API do Google Maps [Geocoding](https://developers.google.com/maps/documentation/geocoding/intro) junto com a biblioteca [`googlemaps`](https://github.com/googlemaps/google-maps-services-python).
 
@@ -100,7 +110,7 @@ print(f'{longitude}, {latitude}')
 # -46.6899982, -23.5984886
 ```
 
-## Obtendo o código do setor censitário do um endereço
+## Obtendo o código do setor censitário a partir de um endereço
 
 Agora que conseguimos o ponto com as coordenadas nós precisamos encontrar em qual setor censitário ele está localizado. O próximo passo é converter a string de coordenadas num objeto `Point` para que o Shapefile entenda que se trata de um ponto geográfico. Vamos usar a biblioteca `shapely` para isso.
 
@@ -137,12 +147,6 @@ geolocation_info_df
 Finalmente, o último passo é dar um merge do nosso dataset com o que contém as variáveis do censo e correr pro abraço.
 
 ```Python
-ibge_census_features_df = pd.read_csv(
-    'Database/SP1/CSV/Basico_SP1.csv',
-    encoding='iso8859_15',
-    sep=';'
-)
-
 geolocation_info_with_ibge_df = geolocation_info_df.merge(
     ibge_census_features_df,
     left_on='census_code',
@@ -158,5 +162,8 @@ O resultado final ficará assim:
 |----------------------------------------|-----|------|------|------|---|
 | Avenida Engenheiro Luis Carlos Berrini | ... | 160  | 500  | 3,13 |...|
 
-Boas! Você acabou de enriquecer sua base de dados com características do endereço que vão te permitir fazer predições em qualquer lugar do Brasil =D
+Reforçando aqui que o significado das variáveis `V001`, `V002` e `V003` podem ser encontrados na [documentação do Censo](https://www.ibge.gov.br/estatisticas-novoportal/downloads-estatisticas.html).
+
+Boas! Você acabou de enriquecer sua base de dados com características do endereço mais interessantes.
+Lembrando que você pode sempre pesquisar outras fontes de dados e aplicar o mesmo conceito para que consiga identificar fatores geográficos que vão te permitir fazer análises e predições em qualquer lugar do Brasil =D
 
