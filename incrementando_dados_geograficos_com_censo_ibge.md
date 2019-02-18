@@ -29,7 +29,7 @@ SSSS – Setor
 ```
 
 ![](/images/setores_censitarios_vila_olimpia.png)
-Exemplo de organização de setores censitários do bairro Vila Olímpia (em azul claro) em São Paulo. Cada setor é limitado pelas linhas azuis mais escuras. Extraído de https://censo2010.ibge.gov.br/sinopseporsetores/
+Exemplo de organização de setores censitários do bairro Itaim Bibi (em azul claro) em São Paulo. Cada setor é limitado pelas linhas azuis mais escuras. Extraído de https://censo2010.ibge.gov.br/sinopseporsetores/
 
 
 A base de dados coletados do Censo IBGE 2010 pode ser encontrada [aqui](https://www.ibge.gov.br/estatisticas-novoportal/downloads-estatisticas.html) seguindo o caminho:
